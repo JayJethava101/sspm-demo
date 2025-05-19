@@ -3,10 +3,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { v4 as uuidv4 } from 'uuid';
-
 import { Tenant } from './entities/tenant.entity';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { DatabaseService } from '../database/database.service';
+import { KmsService } from '../services/kms.service';
 
 @Injectable()
 export class TenantService {
@@ -19,6 +19,7 @@ export class TenantService {
     // @Inject('MANAGEMENT_DATA_SOURCE')
     // private dataSource: DataSource,
     private databaseService: DatabaseService,
+    private kmsService: KmsService
   ) {}
 
   async findAll(): Promise<Tenant[]> {
@@ -44,8 +45,10 @@ export class TenantService {
     tenant.dbName = dbName;
     tenant.dbHost = this.configService.get<string>('PG_HOST', 'localhost');
     tenant.dbPort = this.configService.get<number>('PG_PORT', 5432);
-    tenant.dbUser = this.configService.get<string>('PG_USER', 'postgres');
-    tenant.dbPassword = this.configService.get<string>('PG_PASSWORD', 'postgres');
+    
+    // Encrypt database credentials before saving
+    tenant.dbUser = await this.kmsService.encrypt(this.configService.get<string>('PG_USER', 'postgres'));
+    tenant.dbPassword = await this.kmsService.encrypt(this.configService.get<string>('PG_PASSWORD', 'postgres'));
     
     // Create the physical database
     await this.createTenantDatabase(tenant);
@@ -97,5 +100,22 @@ export class TenantService {
       this.logger.error(`Failed to initialize schema for tenant ${tenant.name}`, error);
       throw error;
     }
+  }
+
+  async update(id: string, tenant: Partial<Tenant>): Promise<Tenant | null> {
+    // If credentials are being updated, encrypt them
+    if (tenant.dbUser) {
+      tenant.dbUser = await this.kmsService.encrypt(tenant.dbUser);
+    }
+    if (tenant.dbPassword) {
+      tenant.dbPassword = await this.kmsService.encrypt(tenant.dbPassword);
+    }
+
+    await this.tenantRepository.update(id, tenant);
+    return this.findById(id);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.tenantRepository.delete(id);
   }
 }

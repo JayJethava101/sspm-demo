@@ -1,21 +1,12 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity('organizations')
+@Entity('tenants')
 export class Tenant {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ unique: true })
+  @Column()
   name: string;
-
-  @Column({ name: 'db_name', unique: true })
-  dbName: string;
-
-  @Column({ name: 'db_user' })
-  dbUser: string;
-
-  @Column({ name: 'db_password' })
-  dbPassword: string;
 
   @Column({ name: 'db_host' })
   dbHost: string;
@@ -23,9 +14,21 @@ export class Tenant {
   @Column({ name: 'db_port' })
   dbPort: number;
 
+  @Column({ name: 'db_name', unique: true })
+  dbName: string;
+
+  @Column({ name: 'db_user', type: 'text' })
+  dbUser: string;
+
+  @Column({ name: 'db_password', type: 'text' })
+  dbPassword: string;
+
   @Column({ default: true })
   active: boolean;
 
-  @CreateDateColumn({ name: 'created_at' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   createdAt: Date;
+
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
+  updatedAt: Date;
 }

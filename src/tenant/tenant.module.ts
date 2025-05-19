@@ -6,7 +6,7 @@ import { Tenant } from './entities/tenant.entity';
 import { DatabaseModule } from '../database/database.module';
 import { DataSource, DataSourceOptions } from 'typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-
+import { KmsService } from 'src/services/kms.service';
 const databaseConfig = (configService: ConfigService): DataSourceOptions => ({
   type: 'postgres',
   name: 'management',
@@ -46,6 +46,7 @@ const databaseConfig = (configService: ConfigService): DataSourceOptions => ({
     //   },
     //   inject: [ConfigService],
     // },
+    KmsService,
   ],
   exports: [TenantService],
 })

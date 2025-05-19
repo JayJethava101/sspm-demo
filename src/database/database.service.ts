@@ -4,6 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Tenant } from '../tenant/entities/tenant.entity';
+import { KmsService } from '../services/kms.service';
 
 @Injectable()
 export class DatabaseService {
@@ -16,6 +17,7 @@ export class DatabaseService {
     private configService: ConfigService,
     @Inject('DATA_SOURCE')
     private defaultDataSource: DataSource,
+    private readonly kmsService: KmsService
   ) {}
 
   async getConnectionForTenant(tenantId: string): Promise<DataSource> {
@@ -23,12 +25,10 @@ export class DatabaseService {
     if (this.tenantConnections.has(tenantId)) {
       const connection = this.tenantConnections.get(tenantId);
       
-      // Check if connection exists and reinitialize if not connected
       if (connection && !connection.isInitialized) {
         await connection.initialize();
       }
       
-      // Return connection with proper type checking
       if (connection) {
         return connection;
       }
@@ -40,17 +40,21 @@ export class DatabaseService {
       throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
     }
 
+    // Decrypt the stored credentials
+    const dbUser = await this.kmsService.decrypt(tenant.dbUser);
+    const dbPassword = await this.kmsService.decrypt(tenant.dbPassword);
+
     // Create connection options
     const options: DataSourceOptions = {
       type: 'postgres',
       host: tenant.dbHost,
       port: tenant.dbPort,
-      username: tenant.dbUser,
-      password: tenant.dbPassword,
+      username: dbUser,
+      password: dbPassword,
       database: tenant.dbName,
       entities: [__dirname + '/../**/*.entity.{js,ts}'],
-      // Exclude the Tenant entity
       entitySkipConstructor: true,
+      synchronize: false,
     };
 
     // Create and initialize connection
@@ -61,6 +65,17 @@ export class DatabaseService {
     this.tenantConnections.set(tenantId, connection);
     
     return connection;
+  }
+
+  async createTenantConnection(tenant: Tenant, dbUser: string, dbPassword: string): Promise<void> {
+    // Encrypt credentials before storing
+    const encryptedUser = await this.kmsService.encrypt(dbUser);
+    const encryptedPassword = await this.kmsService.encrypt(dbPassword);
+
+    // Update tenant with encrypted credentials
+    tenant.dbUser = encryptedUser;
+    tenant.dbPassword = encryptedPassword;
+    await this.tenantRepository.save(tenant);
   }
 
   async closeAllConnections(): Promise<void> {
