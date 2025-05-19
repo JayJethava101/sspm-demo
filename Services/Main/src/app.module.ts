@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TenantModule } from './tenant/tenant.module';
 import { DatabaseModule } from './database/database.module';
 import { UsersModule } from './users/users.module';
+import { RabbitMqModule } from './rabbit-mq/rabbit-mq.module';
 
 
 
@@ -32,6 +33,8 @@ import { UsersModule } from './users/users.module';
     DatabaseModule,
     
     UsersModule,
+    
+    RabbitMqModule,
     
    
   ],

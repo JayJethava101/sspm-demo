@@ -5,9 +5,9 @@ import { TenantMiddleware } from '../database/tenant.middleware';
 import { TenantModule } from '../tenant/tenant.module';
 
 @Module({
-  imports: [TenantModule], // Que: Why is this needed?
+  imports: [TenantModule, ],
   controllers: [UsersController],
-  providers: [UsersService],
+  providers: [UsersService, ],
 })
 export class UsersModule {
   configure(consumer: MiddlewareConsumer) {

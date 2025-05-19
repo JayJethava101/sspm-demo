@@ -40,9 +40,11 @@ export class DatabaseService {
       throw new NotFoundException(`Tenant with ID ${tenantId} not found`);
     }
 
-    // Decrypt the stored credentials
-    const dbUser = await this.kmsService.decrypt(tenant.dbUser);
-    const dbPassword = await this.kmsService.decrypt(tenant.dbPassword);
+    // todo: Decrypt the stored credentials
+    // const dbUser = await this.kmsService.decrypt(tenant.dbUser);
+    // const dbPassword = await this.kmsService.decrypt(tenant.dbPassword);
+    const dbUser = tenant.dbUser;
+    const dbPassword = tenant.dbPassword;
 
     // Create connection options
     const options: DataSourceOptions = {
