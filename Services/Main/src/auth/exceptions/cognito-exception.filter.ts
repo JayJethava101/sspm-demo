@@ -38,6 +38,10 @@ import {
         message: 'Internal server error',
         errorCode: 'INTERNAL_ERROR',
       };
+      
+
+      // console.log(exception instanceof HttpException)
+      // console.log(typeof exception === 'object' && exception !== null && 'constructor' in exception)
   
       // Check if it's a cognito-specific exception
       if (exception instanceof CognitoException) {
@@ -47,6 +51,23 @@ import {
           statusCode: status,
           message: exception.message,
           errorCode: exception.errorCode,
+        };
+      }
+      // Handle NestJS HTTP exceptions 
+      else if (exception instanceof HttpException) {
+        status = exception.getStatus();
+        const exceptionResponse = exception.getResponse();
+        console.log('Message ---->',typeof exceptionResponse === 'object' 
+          ? (exceptionResponse as any).message || 'Http exception'
+          : exceptionResponse)
+        
+        errorResponse = {
+          ...errorResponse,
+          statusCode: status,
+          message: typeof exceptionResponse === 'object' 
+            ? (exceptionResponse as any).message || 'Http exception'
+            : exceptionResponse,
+          errorCode: 'HTTP_ERROR',
         };
       } 
       // Handle AWS SDK exceptions and map them to our custom exceptions
@@ -143,20 +164,7 @@ import {
           };
         }
       }
-      // Handle NestJS HTTP exceptions 
-      else if (exception instanceof HttpException) {
-        status = exception.getStatus();
-        const exceptionResponse = exception.getResponse();
-        
-        errorResponse = {
-          ...errorResponse,
-          statusCode: status,
-          message: typeof exceptionResponse === 'object' 
-            ? (exceptionResponse as any).message || 'Http exception'
-            : exceptionResponse,
-          errorCode: 'HTTP_ERROR',
-        };
-      }
+     
   
       // Log the error (but not in production for sensitive info)
       this.logger.error(`${request.method} ${request.url} ${status}`, exception);
