@@ -19,6 +19,11 @@ export class JwtGuard implements CanActivate {
     this.loadJwks();
   }
 
+  private extractTokenFromHeader(request: Request): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
+  }
+
   private async loadJwks() {
     try {
       const response = await axios.get(`${this.cognitoIssuer}/.well-known/jwks.json`);
@@ -68,8 +73,5 @@ export class JwtGuard implements CanActivate {
     }
   }
 
-  private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
-  }
+  
 }

@@ -7,6 +7,7 @@ import { UsersModule } from './users/users.module';
 import { RabbitMqModule } from './rabbit-mq/rabbit-mq.module';
 import { CognitoService } from './cognito/cognito.service';
 import { AuthModule } from './auth/auth.module';
+import { RbacModule } from './rbac/rbac.module';
 
 
 
@@ -39,6 +40,8 @@ import { AuthModule } from './auth/auth.module';
     RabbitMqModule,
     
     AuthModule,
+    
+    RbacModule,
     
    
   ],

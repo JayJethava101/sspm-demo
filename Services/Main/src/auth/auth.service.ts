@@ -4,10 +4,14 @@ import { SignUpDto } from './dto/signup.dto';
 import { ConfirmSignUpDto } from './dto/confirm-signup.dto';
 import { SignInDto } from './dto/signin.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { RbacService } from 'src/rbac/rbac.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly cognitoService: CognitoService) {}
+  constructor(private readonly cognitoService: CognitoService,
+    private readonly rbacService: RbacService
+
+  ) {}
 
   async signUp(signUpDto: SignUpDto) {
     const { email, password, name } = signUpDto;
@@ -23,11 +27,20 @@ export class AuthService {
       },
     ];
 
+    // Optionally assign a default role
+    // Note: You need to wait for the user to be confirmed before assigning roles
+    
+   
+
     return this.cognitoService.signUp(email, password, userAttributes);
   }
 
   async confirmSignUp(confirmSignUpDto: ConfirmSignUpDto) {
     const { email, confirmationCode } = confirmSignUpDto;
+
+    // After confirmation succeeds, assign the default role
+    await this.assignDefaultRole(email);
+    
     return this.cognitoService.confirmSignUp(email, confirmationCode);
   }
 
@@ -47,6 +60,11 @@ export class AuthService {
   async changePassword(changePasswordDto: ChangePasswordDto) {
     const { email, currentPassword, newPassword } = changePasswordDto;
     return this.cognitoService.changePassword(email, currentPassword, newPassword);
+  }
+
+  async assignDefaultRole(email: string) {
+    // Default role is typically "user"
+    await this.rbacService.assignRoleToUser(email, 'user');
   }
   
 }

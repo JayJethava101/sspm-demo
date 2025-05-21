@@ -4,7 +4,7 @@ import { SignUpDto } from './dto/signup.dto';
 import { ConfirmSignUpDto } from './dto/confirm-signup.dto';
 import { SignInDto } from './dto/signin.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { JwtGuard } from './jwt/jwt.guard';
+import { JwtGuard } from '../guards/jwt/jwt.guard';
 
 @Controller('auth')
 export class AuthController {
