@@ -4,13 +4,16 @@ import { verify } from 'jsonwebtoken';
 import { Request } from 'express';
 import jwkToPem from 'jwk-to-pem';
 import axios from 'axios';
+import { TokenRevocationService } from 'src/utils/token.revocation.service';
 
 @Injectable()
 export class JwtGuard implements CanActivate {
   private cognitoIssuer: string;
   private jwks: any;
 
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService, 
+    private tokenRevocationService: TokenRevocationService,
+    ){
     const userPoolId = this.configService.get<string>('AWS_COGNITO_USER_POOL_ID');
     const region = this.configService.get<string>('AWS_REGION');
     this.cognitoIssuer = `https://cognito-idp.${region}.amazonaws.com/${userPoolId}`;
@@ -54,6 +57,13 @@ export class JwtGuard implements CanActivate {
       throw new UnauthorizedException('No token provided');
     }
 
+     // First, check if the token has been revoked
+     const isRevoked = await this.tokenRevocationService.isTokenRevoked(token);
+     console.log(isRevoked)
+     if (isRevoked) {
+       throw new UnauthorizedException('Token has been revoked');
+     }
+
     try {
       // Get the header to extract the kid
       const header = JSON.parse(Buffer.from(token.split('.')[0], 'base64').toString());
@@ -68,7 +78,6 @@ export class JwtGuard implements CanActivate {
       request['user'] = payload;
       return true;
     } catch (error) {
-      console.log(error)
       throw new UnauthorizedException('Invalid token');
     }
   }

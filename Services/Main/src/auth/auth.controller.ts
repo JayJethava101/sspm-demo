@@ -5,6 +5,11 @@ import { ConfirmSignUpDto } from './dto/confirm-signup.dto';
 import { SignInDto } from './dto/signin.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { JwtGuard } from '../guards/jwt/jwt.guard';
+import { GlobalSignOutDto } from './dto/global-signout.dto';
+import { ForcedGlobalSignOutDto } from './dto/forced-global-signout.dto';
+import { RolesGuard } from '../guards/roles/roles.guard';
+import { Roles } from '../decorators/roles.decorator';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -43,5 +48,23 @@ export class AuthController {
   @Post('change-password')
   async changePassword(@Body() changePasswordDto: ChangePasswordDto) {
     return this.authService.changePassword(changePasswordDto);
+  }
+
+  @UseGuards(JwtGuard)
+  @Post('global-signout')
+  async globalSignOut(@Body() globalSignOutDto: GlobalSignOutDto) {
+    return this.authService.globalSignOut(globalSignOutDto);
+  }
+
+  @UseGuards(JwtGuard, RolesGuard)
+  @Roles('admin')
+  @Post('forced-global-signout')
+  async globalSignOutByAdmin(@Body() adminGlobalSignOutDto: ForcedGlobalSignOutDto) {
+    return this.authService.forcedGlobalSignOut(adminGlobalSignOutDto);
+  }
+
+  @Post('refresh-token')
+  async refreshToken(@Body() refreshTokenDto: RefreshTokenDto) {
+    return this.authService.refreshToken(refreshTokenDto.refreshToken);
   }
 }

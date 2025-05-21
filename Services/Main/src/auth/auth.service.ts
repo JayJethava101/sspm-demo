@@ -5,12 +5,15 @@ import { ConfirmSignUpDto } from './dto/confirm-signup.dto';
 import { SignInDto } from './dto/signin.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { RbacService } from 'src/rbac/rbac.service';
+import { GlobalSignOutDto } from './dto/global-signout.dto';
+import { ForcedGlobalSignOutDto } from './dto/forced-global-signout.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly cognitoService: CognitoService,
-    private readonly rbacService: RbacService
-
+  constructor(
+    private readonly cognitoService: CognitoService,
+    private readonly rbacService: RbacService,
+   
   ) {}
 
   async signUp(signUpDto: SignUpDto) {
@@ -65,6 +68,20 @@ export class AuthService {
   async assignDefaultRole(email: string) {
     // Default role is typically "user"
     await this.rbacService.assignRoleToUser(email, 'user');
+  }
+
+  async globalSignOut(globalSignOutDto: GlobalSignOutDto) {
+    const { accessToken } = globalSignOutDto;
+    return this.cognitoService.globalSignOut(accessToken);
+  }
+
+  async forcedGlobalSignOut(adminGlobalSignOutDto: ForcedGlobalSignOutDto   ) {
+    const { username } = adminGlobalSignOutDto;
+    return this.cognitoService.forcedGlobalSignOut(username);
+  }
+
+  async refreshToken(refreshToken: string) {
+    return this.cognitoService.refreshToken(refreshToken);
   }
   
 }

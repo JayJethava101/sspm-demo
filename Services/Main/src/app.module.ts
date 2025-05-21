@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TenantModule } from './tenant/tenant.module';
 import { DatabaseModule } from './database/database.module';
@@ -8,6 +8,8 @@ import { RabbitMqModule } from './rabbit-mq/rabbit-mq.module';
 import { CognitoService } from './cognito/cognito.service';
 import { AuthModule } from './auth/auth.module';
 import { RbacModule } from './rbac/rbac.module';
+import { RedisModule } from '@nestjs-modules/ioredis';
+import { UtilsModule } from './utils/utils.module';
 
 
 
@@ -16,6 +18,15 @@ import { RbacModule } from './rbac/rbac.module';
     // Global configuration
     ConfigModule.forRoot({
       isGlobal: true,
+    }),
+
+    RedisModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'single',
+        url: configService.get('REDIS_URL', 'redis://localhost:6379'),
+      }),
     }),
     
     // Central management database connection
@@ -42,6 +53,8 @@ import { RbacModule } from './rbac/rbac.module';
     AuthModule,
     
     RbacModule,
+    
+    UtilsModule,
     
    
   ],

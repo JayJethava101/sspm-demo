@@ -3,7 +3,6 @@ import { UsersController } from './users.controller';
 import { UsersService } from './users.service';
 import { TenantMiddleware } from '../database/tenant.middleware';
 import { TenantModule } from '../tenant/tenant.module';
-
 @Module({
   imports: [TenantModule, ],
   controllers: [UsersController],

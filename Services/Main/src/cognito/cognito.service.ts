@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { jwtDecode } from 'jwt-decode';
 import {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
@@ -8,6 +9,8 @@ import {
   ForgotPasswordCommand,
   ConfirmForgotPasswordCommand,
   ChangePasswordCommand,
+  AdminUserGlobalSignOutCommand,
+  GlobalSignOutCommand,
 } from '@aws-sdk/client-cognito-identity-provider';
 import { createHmac } from 'crypto';
 import {
@@ -22,7 +25,7 @@ import {
   TooManyRequestsException,
   InvalidParameterException
 } from '../auth/exceptions/cognito-exceptions';
-
+import { TokenRevocationService } from 'src/utils/token.revocation.service';
 @Injectable()
 export class CognitoService {
   private readonly cognitoClient: CognitoIdentityProviderClient;
@@ -30,7 +33,7 @@ export class CognitoService {
   private readonly clientId: string;
   private readonly clientSecret: string;
 
-  constructor(private configService: ConfigService) {
+  constructor(private configService: ConfigService, private tokenRevocationService: TokenRevocationService) {
     this.userPoolId = this.configService.get<string>('AWS_COGNITO_USER_POOL_ID') || '';
     this.clientId = this.configService.get<string>('AWS_COGNITO_CLIENT_ID') || '';
     this.clientSecret = this.configService.get<string>('AWS_COGNITO_CLIENT_SECRET') || '';
@@ -52,6 +55,23 @@ export class CognitoService {
   }
 
   /**
+   * Handle Cognito errors and map them to custom exceptions
+   */
+  private handleCognitoError(error: any): never {
+    if (error.name === 'UsernameExistsException') {
+      throw new UsernameExistsException();
+    } else if (error.name === 'InvalidPasswordException') {
+      throw new InvalidPasswordException();
+    } else if (error.name === 'InvalidParameterException') {
+      throw new InvalidParameterException(error.message);
+    } else if (error.name === 'TooManyRequestsException') {
+      throw new TooManyRequestsException();
+    }
+    // If not a known error, re-throw the original
+    throw error;
+  }
+
+  /**
    * Sign up a new user
    */
   async signUp(email: string, password: string, userAttributes: { Name: string; Value: string }[]) {
@@ -69,18 +89,7 @@ export class CognitoService {
       const response = await this.cognitoClient.send(command);
       return response;
     } catch (error) {
-      // Map AWS SDK errors to our custom exceptions
-      if (error.name === 'UsernameExistsException') {
-        throw new UsernameExistsException();
-      } else if (error.name === 'InvalidPasswordException') {
-        throw new InvalidPasswordException();
-      } else if (error.name === 'InvalidParameterException') {
-        throw new InvalidParameterException(error.message);
-      } else if (error.name === 'TooManyRequestsException') {
-        throw new TooManyRequestsException();
-      } 
-      // If not a known error, re-throw the original
-      throw error;
+      this.handleCognitoError(error);
     }
   }
 
@@ -101,18 +110,7 @@ export class CognitoService {
       const response = await this.cognitoClient.send(command);
       return response;
     } catch (error) {
-      // Map AWS SDK errors to our custom exceptions
-      if (error.name === 'UsernameExistsException') {
-        throw new UsernameExistsException();
-      } else if (error.name === 'InvalidPasswordException') {
-        throw new InvalidPasswordException();
-      } else if (error.name === 'InvalidParameterException') {
-        throw new InvalidParameterException(error.message);
-      } else if (error.name === 'TooManyRequestsException') {
-        throw new TooManyRequestsException();
-      } 
-      // If not a known error, re-throw the original
-      throw error;
+      this.handleCognitoError(error);
     }
   }
 
@@ -135,19 +133,8 @@ export class CognitoService {
 
       const response = await this.cognitoClient.send(command);
       return response;
-    }catch (error) {
-      // Map AWS SDK errors to our custom exceptions
-      if (error.name === 'UsernameExistsException') {
-        throw new UsernameExistsException();
-      } else if (error.name === 'InvalidPasswordException') {
-        throw new InvalidPasswordException();
-      } else if (error.name === 'InvalidParameterException') {
-        throw new InvalidParameterException(error.message);
-      } else if (error.name === 'TooManyRequestsException') {
-        throw new TooManyRequestsException();
-      } 
-      // If not a known error, re-throw the original
-      throw error;
+    } catch (error) {
+      this.handleCognitoError(error);
     }
   }
 
@@ -167,18 +154,7 @@ export class CognitoService {
       const response = await this.cognitoClient.send(command);
       return response;
     } catch (error) {
-      // Map AWS SDK errors to our custom exceptions
-      if (error.name === 'UsernameExistsException') {
-        throw new UsernameExistsException();
-      } else if (error.name === 'InvalidPasswordException') {
-        throw new InvalidPasswordException();
-      } else if (error.name === 'InvalidParameterException') {
-        throw new InvalidParameterException(error.message);
-      } else if (error.name === 'TooManyRequestsException') {
-        throw new TooManyRequestsException();
-      } 
-      // If not a known error, re-throw the original
-      throw error;
+      this.handleCognitoError(error);
     }
   }
 
@@ -200,18 +176,7 @@ export class CognitoService {
       const response = await this.cognitoClient.send(command);
       return response;
     } catch (error) {
-      // Map AWS SDK errors to our custom exceptions
-      if (error.name === 'UsernameExistsException') {
-        throw new UsernameExistsException();
-      } else if (error.name === 'InvalidPasswordException') {
-        throw new InvalidPasswordException();
-      } else if (error.name === 'InvalidParameterException') {
-        throw new InvalidParameterException(error.message);
-      } else if (error.name === 'TooManyRequestsException') {
-        throw new TooManyRequestsException();
-      } 
-      // If not a known error, re-throw the original
-      throw error;
+      this.handleCognitoError(error);
     }
   }
 
@@ -238,19 +203,79 @@ export class CognitoService {
 
       const response = await this.cognitoClient.send(command);
       return response;
-    }catch (error) {
-      // Map AWS SDK errors to our custom exceptions
-      if (error.name === 'UsernameExistsException') {
-        throw new UsernameExistsException();
-      } else if (error.name === 'InvalidPasswordException') {
-        throw new InvalidPasswordException();
-      } else if (error.name === 'InvalidParameterException') {
-        throw new InvalidParameterException(error.message);
-      } else if (error.name === 'TooManyRequestsException') {
-        throw new TooManyRequestsException();
-      } 
-      // If not a known error, re-throw the original
-      throw error;
+    } catch (error) {
+      this.handleCognitoError(error);
+    }
+  }
+
+  /**
+   * Sign out a user from all devices (global sign-out)
+   * Handles revoking refresh tokens and stopping new token issuance
+   * @param accessToken The user's current access token
+   */
+  async globalSignOut(accessToken: string) {
+    try {
+      const command = new GlobalSignOutCommand({
+        AccessToken: accessToken,
+      });
+
+      const response = await this.cognitoClient.send(command);
+
+      // Add the token to our local revocation list
+      await this.tokenRevocationService.revokeToken(accessToken);
+      
+
+      return response;
+    } catch (error) {
+      this.handleCognitoError(error);
+    }
+  }
+
+  /**
+   * Sign out a user from all devices by admin
+   * Only for admin use - requires admin credentials
+   * @param username The user's email/username
+   */
+  async forcedGlobalSignOut(username: string) {
+    try {
+      const command = new AdminUserGlobalSignOutCommand({
+        UserPoolId: this.userPoolId,
+        Username: username,
+      });
+
+      const response = await this.cognitoClient.send(command);
+
+      // todo: set the forcedSignOut flag to true for the user
+
+      return response;
+    } catch (error) {
+      this.handleCognitoError(error);
+    }
+  }
+
+  /**
+   * Refresh a user's access token using a refresh token
+   * @param refreshToken The user's refresh token
+   * @returns The new access token and refresh token
+   */
+  async refreshToken(refreshToken: string) {
+    try {
+   
+      const command = new InitiateAuthCommand({
+        AuthFlow: 'REFRESH_TOKEN_AUTH',
+        ClientId: this.clientId,
+        AuthParameters: {
+          REFRESH_TOKEN: refreshToken,
+          SECRET_HASH: this.clientSecret ,
+        },
+      });
+
+
+
+      const response = await this.cognitoClient.send(command);
+      return response;
+    } catch (error) {
+      this.handleCognitoError(error);
     }
   }
 }
