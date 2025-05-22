@@ -39,12 +39,10 @@ import {
         errorCode: 'INTERNAL_ERROR',
       };
       
-
-      // console.log(exception instanceof HttpException)
-      // console.log(typeof exception === 'object' && exception !== null && 'constructor' in exception)
   
       // Check if it's a cognito-specific exception
       if (exception instanceof CognitoException) {
+        console.log('---> The error captured in cognito-specific exception')
         status = exception.statusCode;
         errorResponse = {
           ...errorResponse,
@@ -55,12 +53,11 @@ import {
       }
       // Handle NestJS HTTP exceptions 
       else if (exception instanceof HttpException) {
+       console.log('---> The error captured in NestJS HTTP exceptions')
+
         status = exception.getStatus();
         const exceptionResponse = exception.getResponse();
-        console.log('Message ---->',typeof exceptionResponse === 'object' 
-          ? (exceptionResponse as any).message || 'Http exception'
-          : exceptionResponse)
-        
+ 
         errorResponse = {
           ...errorResponse,
           statusCode: status,
@@ -72,6 +69,8 @@ import {
       } 
       // Handle AWS SDK exceptions and map them to our custom exceptions
       else if (typeof exception === 'object' && exception !== null && 'constructor' in exception) {
+        console.log('---> The error captured in AWS SDK exceptions')
+
         if (exception.constructor.name === 'UserNotFoundException') {
           const cognitoError = new UserNotFoundException();
           status = cognitoError.statusCode;
@@ -105,8 +104,10 @@ import {
           errorResponse = {
             ...errorResponse,
             statusCode: status,
-            message: cognitoError.message,
+            message: (exception as { message: string, staus: number })?.message || cognitoError.message,
             errorCode: cognitoError.errorCode,
+          
+          
           };
         } else if (exception.constructor.name === 'UsernameExistsException') {
           const cognitoError = new UsernameExistsException();

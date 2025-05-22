@@ -59,9 +59,8 @@ export class JwtGuard implements CanActivate {
 
      // First, check if the token has been revoked
      const isRevoked = await this.tokenRevocationService.isTokenRevoked(token);
-     console.log(isRevoked)
      if (isRevoked) {
-       throw new UnauthorizedException('Token has been revoked');
+       throw new UnauthorizedException('Session expired, Login again');
      }
 
     try {

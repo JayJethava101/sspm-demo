@@ -67,6 +67,8 @@ export class CognitoService {
     } else if (error.name === 'TooManyRequestsException') {
       throw new TooManyRequestsException();
     }
+
+    console.log('Re-throw the original error', error)
     // If not a known error, re-throw the original
     throw error;
   }
