@@ -1,3 +1,4 @@
+import { Metadata } from "@grpc/grpc-js";
 import { CreateUserDto, UpdateUserDto } from "src/user/dto/user.dto";
 
 export interface User {
@@ -9,7 +10,7 @@ export interface User {
 }
 
 export interface IUserService {
-  createUser(createUserDto: CreateUserDto): Promise<User>;
+  createUser(createUserDto: CreateUserDto, metadata: Metadata): Promise<User>;
   getUser(data: { id: string }): Promise<User>;
   updateUser(data: { id: string } & UpdateUserDto): Promise<User>;
   deleteUser(data: { id: string }): Promise<void>;

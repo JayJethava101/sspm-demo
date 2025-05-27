@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, Headers } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
 import { User } from 'src/interfaces/user.interface';
@@ -8,8 +8,14 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  async createUser(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return this.userService.createUser(createUserDto);
+  async createUser(
+    @Body() createUserDto: CreateUserDto,
+    @Headers('x-tenant-id') tenantId: string
+  ): Promise<User> {
+    if (!tenantId) {
+      throw new Error('tenantId key is required in header');
+    }
+    return this.userService.createUser(createUserDto, tenantId);
   }
 
   @Get(':id')

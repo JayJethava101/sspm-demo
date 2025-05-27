@@ -28,7 +28,14 @@ export class TenantService {
   }
 
   async findById(id: string): Promise<Tenant | null> {
-    return this.tenantRepository.findOneBy({ id });
+
+    // console.log( {id: `${id}`})
+
+    const data = await this.tenantRepository.findOne({ 
+      where: {id}
+     });
+    // console.log('data--->', data)
+    return data
   }
 
   async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
